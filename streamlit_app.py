@@ -1,19 +1,26 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, date
+import os
 
 st.set_page_config(page_title="COVID-19 Vaccine Screening", page_icon="💉", layout="centered")
 
-# ---- App Title ----
+# ---- Title ----
 st.title("💉 COVID-19 Vaccination Screening (Australia)")
-st.markdown("Please complete this short form to check if you’re ready for your COVID-19 vaccination.")
+st.markdown("Please complete this quick form to check if you’re ready for your COVID-19 vaccination.")
 
 # ---- Personal Details ----
 st.header("👤 Personal Details")
 col1, col2 = st.columns(2)
+
 with col1:
     name = st.text_input("Full Name")
-    dob = st.date_input("Date of Birth (DD/MM/YYYY)", format="DD/MM/YYYY")
+    dob = st.date_input(
+        "Date of Birth (DD/MM/YYYY)",
+        format="DD/MM/YYYY",
+        min_value=date(1900, 1, 1),
+        max_value=date.today()
+    )
     phone = st.text_input("Phone Number")
 with col2:
     email = st.text_input("Email Address")
@@ -72,11 +79,12 @@ if st.button("Submit Form", use_container_width=True):
         "Timestamp": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
     }
 
-    # Save to CSV (append mode)
+    # ---- Save responses locally ----
+    file_exists = os.path.isfile("responses.csv")
     df = pd.DataFrame([data])
-    df.to_csv("responses.csv", mode="a", header=not pd.io.common.file_exists("responses.csv"), index=False)
+    df.to_csv("responses.csv", mode="a", header=not file_exists, index=False)
 
-    # ---- Results Display ----
+    # ---- Show Result ----
     if (q1 == "Yes" and q3 == "No" and consent):
         st.success("### ✅ You are safe to proceed with vaccination")
         st.balloons()
