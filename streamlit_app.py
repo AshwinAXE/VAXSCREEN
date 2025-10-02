@@ -2,46 +2,57 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
-# ---- App Title ----
-st.title("COVID-19 Vaccination Screening Questionnaire (Australia)")
+st.set_page_config(page_title="COVID-19 Vaccine Screening", page_icon="💉", layout="centered")
 
-st.write("Please complete this short form to check if you are ready for your COVID-19 vaccination.")
+# ---- App Title ----
+st.title("💉 COVID-19 Vaccination Screening (Australia)")
+st.markdown("Please complete this short form to check if you’re ready for your COVID-19 vaccination.")
 
 # ---- Personal Details ----
-st.header("Personal Details")
-name = st.text_input("Full Name")
-dob = st.date_input("Date of Birth")
-address = st.text_area("Address")
-phone = st.text_input("Phone Number")
-email = st.text_input("Email Address")
+st.header("👤 Personal Details")
+col1, col2 = st.columns(2)
+with col1:
+    name = st.text_input("Full Name")
+    dob = st.date_input("Date of Birth (DD/MM/YYYY)", format="DD/MM/YYYY")
+    phone = st.text_input("Phone Number")
+with col2:
+    email = st.text_input("Email Address")
+    address = st.text_area("Home Address")
 
 # ---- Carer Details (Optional) ----
-st.header("Carer (Optional)")
-carer_name = st.text_input("Carer's Full Name", "")
-carer_phone = st.text_input("Carer's Phone", "")
-carer_email = st.text_input("Carer's Email", "")
+with st.expander("👥 Add Carer Details (Optional)"):
+    carer_name = st.text_input("Carer’s Full Name", "")
+    carer_phone = st.text_input("Carer’s Phone", "")
+    carer_email = st.text_input("Carer’s Email", "")
+
+st.markdown("---")
 
 # ---- Screening Questions ----
-st.header("Screening Questions")
+st.header("📝 Screening Questions")
 
-q1 = st.radio("Are you feeling well today?", ["Yes", "No"])
-q2 = st.radio("Have you had a COVID-19 vaccine before?", ["Yes", "No"])
-q3 = st.radio("Have you ever had a severe allergic reaction (anaphylaxis) to a vaccine or medicine?", ["Yes", "No"])
-q4 = st.radio("Do you have a bleeding disorder or take blood-thinning medication?", ["Yes", "No"])
-q5 = st.radio("Are you pregnant, breastfeeding, or planning pregnancy?", ["Yes", "No"])
-q6 = st.radio("Have you tested positive to COVID-19 in the past 6 months?", ["Yes", "No"])
-q7 = st.radio("Have you had another vaccine in the past 7 days?", ["Yes", "No"])
-q8 = st.radio("Do you have a weakened immune system (e.g. illness or treatment)?", ["Yes", "No"])
-q9 = st.radio("Have you ever fainted after a vaccine or injection?", ["Yes", "No"])
+def yesno(label):
+    return st.radio(label, ["Yes", "No"], horizontal=True)
+
+q1 = yesno("Are you feeling well today?")
+q2 = yesno("Have you had a COVID-19 vaccine before?")
+q3 = yesno("Have you ever had a severe allergic reaction (anaphylaxis) to a vaccine or medicine?")
+q4 = yesno("Do you have a bleeding disorder or take blood-thinning medication?")
+q5 = yesno("Are you pregnant, breastfeeding, or planning pregnancy?")
+q6 = yesno("Have you tested positive to COVID-19 in the past 6 months?")
+q7 = yesno("Have you had another vaccine in the past 7 days?")
+q8 = yesno("Do you have a weakened immune system (e.g. illness or treatment)?")
+q9 = yesno("Have you ever fainted after a vaccine or injection?")
+
+st.markdown("---")
 
 # ---- Consent ----
-consent = st.checkbox("I consent to receiving the COVID-19 vaccine today")
+consent = st.checkbox("✅ I consent to receiving the COVID-19 vaccine today")
 
 # ---- Submit Button ----
-if st.button("Submit"):
+if st.button("Submit Form", use_container_width=True):
     data = {
         "Name": name,
-        "DOB": dob,
+        "DOB": dob.strftime("%d/%m/%Y"),
         "Address": address,
         "Phone": phone,
         "Email": email,
@@ -58,15 +69,16 @@ if st.button("Submit"):
         "Immunocompromised": q8,
         "Fainting History": q9,
         "Consent": consent,
-        "Timestamp": datetime.now()
+        "Timestamp": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
     }
-    
-    # Save responses (append to CSV for backend use)
-    df = pd.DataFrame([data])
-    df.to_csv("responses.csv", mode="a", header=False, index=False)
 
-    # Logic: If no "red flags", show ✅
+    # Save to CSV (append mode)
+    df = pd.DataFrame([data])
+    df.to_csv("responses.csv", mode="a", header=not pd.io.common.file_exists("responses.csv"), index=False)
+
+    # ---- Results Display ----
     if (q1 == "Yes" and q3 == "No" and consent):
-        st.success("✅ You are safe to proceed with vaccination")
+        st.success("### ✅ You are safe to proceed with vaccination")
+        st.balloons()
     else:
-        st.error("⚠️ Please speak to a healthcare professional before vaccination.")
+        st.error("### ⚠️ Please speak to a healthcare professional before vaccination")
